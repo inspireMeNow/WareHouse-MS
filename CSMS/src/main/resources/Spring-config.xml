@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
+    <!-- 加载数据库连接信息的属性文件 -->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+    <!-- 配置Druid数据源的Bean -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${driverClassName}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${user}"/>
+        <property name="password" value="${password}"/>
+
+    </bean>
+    <!-- 配置分页插件   -->
+    <bean id="pageInterceptor" class="com.github.pagehelper.PageInterceptor">
+        <property name="properties">
+            <props>
+                <prop key="helperDialect">MySQL</prop>  <!--使用什么数据库-->
+                <prop key="reasonable">true</prop>      <!--使页数不越界-->
+            </props>
+        </property>
+    </bean>
+
+    <!-- 配置SessionFactory的Bean -->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+
+        <!-- 注入数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+
+        <!-- 指定MyBatis配置文件的位置 -->
+        <property name="configLocation" value="classpath:MyBatis-config.xml"/>
+
+        <!-- 给实体类起别名 -->
+        <property name="typeAliasesPackage" value="com.jack.entity"/>
+        <!-- 配置分页插件 -->
+        <property name="plugins" ref="pageInterceptor"/>
+    </bean>
+
+    <!-- 配置mapper接口的扫描器，将Mapper接口的实现类自动注入到IoC容器中
+     实现类Bean的名称默认为接口类名的首字母小写 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- basePackage属性指定自动扫描mapper接口所在的包 -->
+        <property name="basePackage" value="com.jack.Mapper"/>
+    </bean>
+    <!--     配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据库连接池 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--    <mvc:default-servlet-handler/>-->
+    <!--配置持久层-->
+    <context:component-scan base-package="com.jack.Mapper">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+    </context:component-scan>
+    <!--配置业务层-->
+    <context:component-scan base-package="com.jack.Service">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+    </context:component-scan>
+    <!--配置视图层-->
+    <context:component-scan base-package="com.jack.Controller">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+    <mvc:annotation-driven>
+        <mvc:message-converters register-defaults="true">
+            <!-- 配置Fastjson支持 -->
+            <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>application/json</value>
+                        <value>text/html;charset=UTF-8</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    <!--拦截器配置-->
+    <mvc:interceptors>
+        <!--后台访问拦截器-->
+        <mvc:interceptor>
+            <!--拦截所有资源-->
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/login"/>
+            <!--实现拦截功能的类-->
+            <bean class="com.jack.interceptor.LoginInterceptor"></bean>
+        </mvc:interceptor>
+    </mvc:interceptors>
+</beans>

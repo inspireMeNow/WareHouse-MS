@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jack.Mapper.UserMapper">
+
+    <insert id="add" useGeneratedKeys="true" keyProperty="ucode">
+        insert into user_table values(#{ucode},#{rcode},#{uname},#{phone})
+    </insert>
+    <update id="updateByUcode">
+        update user_table
+        set
+            rcode = #{rcode},
+            uname = #{uname},
+            phone = #{phone}
+        where
+            ucode = #{ucode}
+    </update>
+    <delete id="deleteByUcode">
+        delete from user_table where ucode = #{ucode}
+    </delete>
+    <select id="selectByUcode" resultType="com.jack.Pojo.User">
+        select * from user_table where ucode = #{ucode}
+    </select>
+    <select id="selectAll" resultType="com.jack.Pojo.User">
+        select * from user_table
+    </select>
+
+<!--    V2方法-->
+    <select id="selectUser" resultType="com.jack.Pojo.dto.UserDto">
+        select ucode,rcode,whname,uname,phone from user_table u inner join wh_table w
+        on u.rcode=w.whcode
+        <where>
+            <if test="ucode!=null and ucode!=''">
+                ucode=#{ucode}
+            </if>
+        </where>
+    </select>
+</mapper>
